@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  clerkOrgId  String?  @unique
+  clerkUserId String?  @unique
+  logoUrl     String?
+  brandColor  String?  @default("#3B82F6")
+  customDomain String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users         User[]
+  clients       Client[]
+  reports       Report[]
+  schedules     ReportSchedule[]
+  alerts        Alert[]
+  subscription  Subscription?
+}
+
+model User {
+  id          String   @id @default(cuid())
+  clerkUserId String   @unique
+  email       String   @unique
+  firstName   String?
+  lastName    String?
+  role        String   @default("owner")
+  orgId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  org         Organization @relation(fields: [orgId], references: [id])
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  website     String?
+  industry    String?
+  orgId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  org           Organization   @relation(fields: [orgId], references: [id])
+  integrations  Integration[]
+  snapshots     DataSnapshot[]
+  reports       Report[]
+  schedules     ReportSchedule[]
+  alerts        Alert[]
+  goals         Goal[]
+}
+
+model Integration {
+  id           String   @id @default(cuid())
+  type         String
+  accessToken  String?
+  refreshToken String?
+  tokenExpiry  DateTime?
+  accountId    String?
+  accountName  String?
+  status       String   @default("connected")
+  clientId     String
+  orgId        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  client      Client @relation(fields: [clientId], references: [id])
+}
+
+model DataSnapshot {
+  id          String   @id @default(cuid())
+  type        String
+  date        DateTime
+  data        Json
+  clientId    String
+  orgId       String
+  createdAt   DateTime @default(now())
+
+  client      Client @relation(fields: [clientId], references: [id])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  title       String
+  type        String
+  status      String   @default("draft")
+  pdfUrl      String?
+  shareToken  String?  @unique
+  aiSummary   String?
+  dateFrom    DateTime?
+  dateTo      DateTime?
+  clientId    String
+  orgId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client      Client       @relation(fields: [clientId], references: [id])
+  org         Organization @relation(fields: [orgId], references: [id])
+}
+
+model ReportSchedule {
+  id            String   @id @default(cuid())
+  frequency     String
+  deliveryDay   String?
+  reportType    String
+  recipients    String[]
+  active        Boolean  @default(true)
+  lastSentAt    DateTime?
+  nextSendAt    DateTime?
+  clientId      String
+  orgId         String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  client        Client       @relation(fields: [clientId], references: [id])
+  org           Organization @relation(fields: [orgId], references: [id])
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  type        String
+  metric      String
+  change      Float
+  severity    String
+  message     String
+  read        Boolean  @default(false)
+  clientId    String
+  orgId       String
+  createdAt   DateTime @default(now())
+
+  client      Client       @relation(fields: [clientId], references: [id])
+  org         Organization @relation(fields: [orgId], references: [id])
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  metric      String
+  target      Float
+  current     Float    @default(0)
+  month       Int
+  year        Int
+  clientId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client      Client @relation(fields: [clientId], references: [id])
+}
+
+model Subscription {
+  id                String   @id @default(cuid())
+  plan              String   @default("free")
+  status            String   @default("active")
+  stripeCustomerId  String?
+  stripePriceId     String?
+  stripeSubId       String?
+  currentPeriodEnd  DateTime?
+  orgId             String   @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  org               Organization @relation(fields: [orgId], references: [id])
+}
