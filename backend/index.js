@@ -52,6 +52,7 @@ app.get('/api/test', requireAuth, (req, res) => {
 // ─── API routes (uncomment as we build them) ───────────
 app.use('/api/auth', require('./routes/auth'))
 app.use('/api/clients', require('./routes/clients'))
+app.use('/api/integrations', require('./routes/integrations'))
 // app.use('/api/reports', require('./routes/reports'))
 
 // ─── 404 handler ───────────────────────────────────────
